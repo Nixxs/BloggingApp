@@ -1,20 +1,22 @@
-# Use an official Node runtime as a parent image
-FROM node:14
+FROM node:19-alpine
 
-# Set the working directory in the container
-WORKDIR /usr/src/app
+ARG DB_NAME
+ARG DB_USERNAME
+ARG DB_PASSWORD
+ARG DB_HOST
+ARG DB_PORT
+ARG PORT
 
-# Copy package.json and package-lock.json
-COPY package*.json ./
+ENV DB_NAME=$DB_NAME
+ENV DB_USERNAME=$DB_USERNAME
+ENV DB_PASSWORD=$DB_PASSWORD
+ENV DB_HOST=$DB_HOST
+ENV DB_PORT=$DB_PORT
+ENV PORT=$PORT
 
-# Install app dependencies
-RUN npm install
-
-# Bundle app source
+WORKDIR /app
 COPY . .
-
-# Your app binds to port 3000 so use the EXPOSE instruction to have it mapped by the docker daemon
+RUN npm install
 EXPOSE 3000
 
-# Define the command to run your app
-CMD [ "node", "index.js" ]
+CMD [ "npm", "start" ]
