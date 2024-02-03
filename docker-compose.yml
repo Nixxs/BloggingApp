@@ -16,6 +16,16 @@ services:
 
   app:
     build: .
+    environment:
+      - NODE_ENV=development
+      - DB_NAME=blogdb
+      - DB_USERNAME=root
+      - DB_PASSWORD=pa55word
+      - DB_HOST=db
+      - DB_PORT=3306
+      - DB_SSL=false
+      - BASE_URL=http://localhost:3000
+      - PORT=3000
     ports:
       - '3000:3000'
     depends_on:
