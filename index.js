@@ -4,6 +4,13 @@ const { handleInvalidJson, handleUnauthorized, handleNotFound, handleAllOtherErr
 const morganMiddleware = require("./logging/morganMiddleware");
 const Logger = require("./logging/logger");
 const handlebars = require('express-handlebars');
+const cors = require('cors');
+
+// setup cors
+var corsOptions = {
+  origin: 'http://localhost:8080',
+  optionsSuccessStatus: 200 // some legacy browsers (IE11, various SmartTVs) choke on 204
+}
 
 // Database
 const db = require("./db");
@@ -13,6 +20,7 @@ models.init();
 
 const app = express();
 
+app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.static('public'));
 app.use(morganMiddleware);
