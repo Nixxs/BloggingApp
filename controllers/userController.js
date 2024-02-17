@@ -21,10 +21,21 @@ const getUser = async (id) => {
 
 /*
  *
+ * @param {email} email- user email
+ * @returns {Promise<User>}
+ */
+const getUserByEmail = async (email) => { 
+  const data = await User.findOne({ where: { email: email } });
+  return data;
+}; 
+
+/*
+ *
  * @param {User} data - user data
  * @returns {Promise<User>}
  */
 const createUser = async (data) => {
+  console.log(data);
   const user = await User.create(data);
   return user;
 };
@@ -54,6 +65,7 @@ const deleteUser = async (id) => {
 module.exports = {
   getUser,
   getUsers,
+  getUserByEmail,
   createUser,
   updateUser,
   deleteUser,

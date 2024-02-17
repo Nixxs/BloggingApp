@@ -1,9 +1,14 @@
 const express = require("express");
 const {validationResult} = require('express-validator');
-const { userValidator, userUpdateValidator } = require("../validators/userValidator");
+const { userValidator, userUpdateValidator, userLoginValidator } = require("../validators/userValidator");
 const { idParamValidator } = require("../validators");
 const router = express.Router();
 const userController = require("../controllers/userController");
+const jwt = require('jsonwebtoken');
+const verifyToken = require('../auth/authMiddleware');
+
+const bcrypt = require('bcrypt');
+const saltRounds = 10;
 
 /**
  * @swagger
@@ -20,7 +25,7 @@ const userController = require("../controllers/userController");
  *      '500':
  *        description: Server error
  */
-router.get("/", async (req, res) => {
+router.get("/", verifyToken, async (req, res) => {
   try{
     const data = await userController.getUsers();
     res.send({ result: 200, data: data });
@@ -113,17 +118,82 @@ router.get("/:id", idParamValidator, async (req, res) => {
  *      '500':
  *        description: Server error
  */
-router.post("/", userValidator, async (req, res) => {
+router.post("/", userValidator, async (req, res, next) => {
   try{
     const errors = validationResult(req);
     if (errors.isEmpty()) {
-      const data = await userController.createUser(req.body);
+      let user = req.body;
+      user.password = await bcrypt.hashSync(user.password, saltRounds);
+
+      const data = await userController.createUser(user);
       res.send({ result: 200, data: data });
     } else {
       res.status(422).json({errors: errors.array()});
     }
   }
   catch(err){
+    next(err);
+  }
+});
+
+/**
+ * @swagger
+ * /api/users/login:
+ *  post:
+ *    description: Use to login a user and get back the user data
+ *    tags:
+ *      - Users
+ *    requestBody:
+ *     content:
+ *      application/json:
+ *       schema:
+ *        type: object
+ *        required:
+ *         - email
+ *         - password
+ *        properties:
+ *         name:
+ *          type: string
+ *          example: John Doe
+ *         email:
+ *          type: string
+ *          example: john@dudes.com
+ *         password:
+ *          type: string
+ *          example: password
+ *    responses:
+ *      '200':
+ *        description: A successful response
+ *      '400':
+ *        description: Invalid JSON
+ *      '404':
+ *        description: User not found
+ *      '422':
+ *        description: Validation error
+ *      '500':
+ *        description: Server error
+ */
+router.post("/login", userLoginValidator, async (req, res, next) => {
+  try{
+    const errors = validationResult(req);
+    const user = await userController.getUserByEmail(req.body.email);
+    if(user){
+      if(bcrypt.compareSync(req.body.password, user.password)){
+        const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, {
+          expiresIn: "1h"
+        });
+        const payload = {
+          token: token,
+          user: user
+        }
+        res.send({ result: 200, data: payload });
+      }else{
+        res.status(404).json({errors: ["Invalid email or password"]});
+      }
+    }else{
+      res.status(404).json({errors: errors.array()});
+    }
+  } catch(err){
     next(err);
   }
 });
